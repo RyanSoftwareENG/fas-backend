@@ -3,6 +3,7 @@ package com.fas.controller;
 import com.fas.entity.Allergy;
 import com.fas.entity.ChronicDisease;
 import com.fas.entity.Client;
+import com.fas.security.RequirePermission;
 import com.fas.service.ClientService;
 import com.fas.service.PatientService;
 import org.springframework.http.HttpStatus;
@@ -22,21 +23,32 @@ public class PatientController {
 
     public PatientController(
             ClientService clientService,
-            PatientService patientService) {
+            PatientService patientService
+    ) {
 
-        this.clientService = clientService;
-        this.patientService = patientService;
+        this.clientService =
+                clientService;
+
+        this.patientService =
+                patientService;
     }
 
     // =====================================================
     // حفظ بيانات المريض كاملة
+    // POST /api/patient
     // =====================================================
+
     @PostMapping
-    public ResponseEntity<Map<String, Object>> savePatient(
-            @RequestBody Client patient) {
+    @RequirePermission("PATIENT_CREATE")
+    public ResponseEntity<Map<String, Object>>
+    savePatient(
+            @RequestBody Client patient
+    ) {
 
         Client savedPatient =
-                clientService.saveClient(patient);
+                clientService.saveClient(
+                        patient
+                );
 
         patientService.savePatientHealthInfo(
                 patient
@@ -45,48 +57,68 @@ public class PatientController {
         Map<String, Object> response =
                 new HashMap<>();
 
-        response.put("success", true);
+        response.put(
+                "success",
+                true
+        );
+
         response.put(
                 "clientID",
                 savedPatient.getClientID()
         );
+
         response.put(
                 "message",
                 "تم حفظ بيانات المريض بنجاح"
         );
 
         return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+                .status(
+                        HttpStatus.CREATED
+                )
+                .body(
+                        response
+                );
     }
+
     // =====================================================
-    // Allergies
+    // جميع أنواع الحساسية
+    // GET /api/patient/allergies
     // =====================================================
 
     @GetMapping("/allergies")
-    public ResponseEntity<List<Allergy>> getAllAllergies() {
+    @RequirePermission("ALLERGY_LIST")
+    public ResponseEntity<List<Allergy>>
+    getAllAllergies() {
 
         List<Allergy> allergies =
                 patientService.getAllAllergies();
 
-        return ResponseEntity.ok(allergies);
+        return ResponseEntity.ok(
+                allergies
+        );
     }
 
     // =====================================================
     // تعديل اسم الحساسية
+    // PUT /api/patient/allergies/{id}
     // =====================================================
 
     @PutMapping("/allergies/{id}")
-    public ResponseEntity<Allergy> updateAllergy(
+    @RequirePermission("ALLERGY_UPDATE")
+    public ResponseEntity<Allergy>
+    updateAllergy(
             @PathVariable Long id,
-            @RequestBody String newName) {
-
-        // -------------------------------------------------
-        // إزالة علامات الاقتباس التي قد يرسلها Jackson
-        // -------------------------------------------------
+            @RequestBody String newName
+    ) {
 
         newName =
-                newName.replace("\"", "").trim();
+                newName
+                        .replace(
+                                "\"",
+                                ""
+                        )
+                        .trim();
 
         Allergy updated =
                 patientService.updateAllergy(
@@ -94,38 +126,50 @@ public class PatientController {
                         newName
                 );
 
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(
+                updated
+        );
     }
 
     // =====================================================
-    // Chronic Diseases
+    // جميع الأمراض المزمنة
+    // GET /api/patient/diseases
     // =====================================================
 
     @GetMapping("/diseases")
+    @RequirePermission("DISEASE_LIST")
     public ResponseEntity<List<ChronicDisease>>
     getAllChronicDiseases() {
 
         List<ChronicDisease> diseases =
-                patientService.getAllChronicDiseases();
+                patientService
+                        .getAllChronicDiseases();
 
-        return ResponseEntity.ok(diseases);
+        return ResponseEntity.ok(
+                diseases
+        );
     }
 
     // =====================================================
     // تعديل اسم المرض
+    // PUT /api/patient/diseases/{id}
     // =====================================================
 
     @PutMapping("/diseases/{id}")
-    public ResponseEntity<ChronicDisease> updateDisease(
+    @RequirePermission("DISEASE_UPDATE")
+    public ResponseEntity<ChronicDisease>
+    updateDisease(
             @PathVariable Long id,
-            @RequestBody String newName) {
-
-        // -------------------------------------------------
-        // إزالة علامات الاقتباس
-        // -------------------------------------------------
+            @RequestBody String newName
+    ) {
 
         newName =
-                newName.replace("\"", "").trim();
+                newName
+                        .replace(
+                                "\"",
+                                ""
+                        )
+                        .trim();
 
         ChronicDisease updated =
                 patientService.updateDisease(
@@ -133,6 +177,8 @@ public class PatientController {
                         newName
                 );
 
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(
+                updated
+        );
     }
 }

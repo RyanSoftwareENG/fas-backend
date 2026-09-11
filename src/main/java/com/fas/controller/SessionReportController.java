@@ -1,6 +1,7 @@
 package com.fas.controller;
 
 import com.fas.entity.SessionReport;
+import com.fas.security.RequirePermission;
 import com.fas.service.SessionReportService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,10 @@ public class SessionReportController {
     private final SessionReportService reportService;
 
     public SessionReportController(
-            SessionReportService reportService) {
-
-        this.reportService = reportService;
+            SessionReportService reportService
+    ) {
+        this.reportService =
+                reportService;
     }
 
     // =====================================================
@@ -27,14 +29,17 @@ public class SessionReportController {
     // =====================================================
 
     @GetMapping
-    public ResponseEntity<List<SessionReport>> getAllReports() {
+    @RequirePermission("REPORT_LIST")
+    public ResponseEntity<List<SessionReport>>
+    getAllReports() {
 
         List<SessionReport> reports =
                 reportService.getAllReports();
 
-        return ResponseEntity.ok(reports);
+        return ResponseEntity.ok(
+                reports
+        );
     }
-
 
     // =====================================================
     // GET
@@ -43,17 +48,27 @@ public class SessionReportController {
     // =====================================================
 
     @GetMapping("/session/{sessionId}")
-    public ResponseEntity<SessionReport> getReportBySessionId(
-            @PathVariable Long sessionId) {
+    @RequirePermission("REPORT_VIEW_BY_SESSION")
+    public ResponseEntity<SessionReport>
+    getReportBySessionId(
+            @PathVariable Long sessionId
+    ) {
 
         SessionReport report =
-                reportService.getReportBySessionId(sessionId);
+                reportService.getReportBySessionId(
+                        sessionId
+                );
 
         if (report == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.ok(report);
+        return ResponseEntity.ok(
+                report
+        );
     }
 
     // =====================================================
@@ -63,17 +78,27 @@ public class SessionReportController {
     // =====================================================
 
     @GetMapping("/{reportId:\\d+}")
-    public ResponseEntity<SessionReport> getReportById(
-            @PathVariable Long reportId) {
+    @RequirePermission("REPORT_VIEW")
+    public ResponseEntity<SessionReport>
+    getReportById(
+            @PathVariable Long reportId
+    ) {
 
         SessionReport report =
-                reportService.getReportById(reportId);
+                reportService.getReportById(
+                        reportId
+                );
 
         if (report == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.ok(report);
+        return ResponseEntity.ok(
+                report
+        );
     }
 
     // =====================================================
@@ -83,15 +108,24 @@ public class SessionReportController {
     // =====================================================
 
     @PostMapping
-    public ResponseEntity<SessionReport> saveReport(
-            @RequestBody SessionReport report) {
+    @RequirePermission("REPORT_CREATE")
+    public ResponseEntity<SessionReport>
+    saveReport(
+            @RequestBody SessionReport report
+    ) {
 
         SessionReport savedReport =
-                reportService.saveReport(report);
+                reportService.saveReport(
+                        report
+                );
 
         return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(savedReport);
+                .status(
+                        HttpStatus.CREATED
+                )
+                .body(
+                        savedReport
+                );
     }
 
     // =====================================================
@@ -101,9 +135,12 @@ public class SessionReportController {
     // =====================================================
 
     @PutMapping("/{reportId:\\d+}")
-    public ResponseEntity<SessionReport> updateReport(
+    @RequirePermission("REPORT_UPDATE")
+    public ResponseEntity<SessionReport>
+    updateReport(
             @PathVariable Long reportId,
-            @RequestBody SessionReport report) {
+            @RequestBody SessionReport report
+    ) {
 
         SessionReport updatedReport =
                 reportService.updateReport(
@@ -111,7 +148,9 @@ public class SessionReportController {
                         report
                 );
 
-        return ResponseEntity.ok(updatedReport);
+        return ResponseEntity.ok(
+                updatedReport
+        );
     }
 
     // =====================================================
@@ -121,11 +160,18 @@ public class SessionReportController {
     // =====================================================
 
     @DeleteMapping("/{reportId:\\d+}")
-    public ResponseEntity<Void> deleteReport(
-            @PathVariable Long reportId) {
+    @RequirePermission("REPORT_DELETE")
+    public ResponseEntity<Void>
+    deleteReport(
+            @PathVariable Long reportId
+    ) {
 
-        reportService.deleteReport(reportId);
+        reportService.deleteReport(
+                reportId
+        );
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }
