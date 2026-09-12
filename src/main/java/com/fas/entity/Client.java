@@ -71,10 +71,11 @@ public class Client {
 // =========================
 
     @OneToMany(
-            mappedBy = "client"
+            mappedBy = "client",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
-    private List<PatientAllergy> allergies =
-            new ArrayList<>();
+    private List<PatientAllergy> allergies = new ArrayList<>();
 
 
 // =========================
@@ -82,10 +83,14 @@ public class Client {
 // =========================
 
     @OneToMany(
-            mappedBy = "client"
+            mappedBy = "client",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
     private List<PatientChronicDisease> chronicDiseases =
             new ArrayList<>();
+
+
 // =========================
 // Lifestyle
 // =========================
@@ -110,7 +115,7 @@ public class Client {
     )
 
     private List<Session> sessions = new ArrayList<>();
-    // Hibernate يحتاج Constructor فارغ
+    // Hibernate ظٹط­طھط§ط¬ Constructor ظپط§ط±ط؛
     public Client() {
     }
 

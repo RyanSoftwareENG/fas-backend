@@ -2,7 +2,6 @@ package com.fas.controller;
 
 import com.fas.dto.SessionListDTO;
 import com.fas.entity.Session;
-import com.fas.security.RequirePermission;
 import com.fas.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,29 +18,21 @@ public class SessionController {
     private final SessionService sessionService;
 
     @Autowired
-    public SessionController(
-            SessionService sessionService
-    ) {
-        this.sessionService =
-                sessionService;
+    public SessionController(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
+
     // =========================================================
-    // إنشاء جلسة جديدة
-    // POST /api/sessions
+    // ط¥ظ†ط´ط§ط، ط¬ظ„ط³ط© ط¬ط¯ظٹط¯ط©
     // =========================================================
 
     @PostMapping
-    @RequirePermission("SESSION_CREATE")
-    public ResponseEntity<Session>
-    saveSession(
-            @RequestBody Session session
-    ) {
+    public ResponseEntity<Session> saveSession(
+            @RequestBody Session session) {
 
         Session savedSession =
-                sessionService.saveSession(
-                        session
-                );
+                sessionService.saveSession(session);
 
         return new ResponseEntity<>(
                 savedSession,
@@ -49,69 +40,65 @@ public class SessionController {
         );
     }
 
+
     // =========================================================
-    // جلب جميع الجلسات
-    // GET /api/sessions
-    // البيانات الأساسية فقط
+    // ط¬ظ„ط¨ ط¬ظ…ظٹط¹ ط§ظ„ط¬ظ„ط³ط§طھ
+    // ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ط£ط³ط§ط³ظٹط© ظپظ‚ط·
     // =========================================================
 
     @GetMapping
-    @RequirePermission("SESSION_LIST")
-    public ResponseEntity<List<SessionListDTO>>
-    allSessions() {
+    public ResponseEntity<List<SessionListDTO>> allSessions() {
 
         return ResponseEntity.ok(
                 sessionService.getAllSessions()
         );
     }
 
+
     // =========================================================
-    // جلب جلسة بواسطة ID
-    // GET /api/sessions/{id}
+    // ط¬ظ„ط¨ ط¬ظ„ط³ط© ط¨ظˆط§ط³ط·ط© ID
     // =========================================================
 
     @GetMapping("/{id}")
-    @RequirePermission("SESSION_VIEW")
-    public ResponseEntity<Session>
-    getSessionById(
-            @PathVariable Long id
-    ) {
+    public ResponseEntity<Session> getSessionById(@PathVariable Long id) {
 
-        Optional<Session> session =
-                sessionService.getSessionById(
-                        id
-                );
+        Optional<Session> session = sessionService.getSessionById(id);
 
         if (session.isPresent()) {
+            try {
+                // 1. ط¥ظ†ط´ط§ط، ظƒط§ط¦ظ† ObjectMapper ظ„طھط­ظˆظٹظ„ ط§ظ„ط¬ط§ظپط§ ط¥ظ„ظ‰ JSON
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-            /*
-             * الإبقاء على منطق الكود الحالي.
-             * تم حذف كود ObjectMapper التجريبي
-             * لأنه لا يؤثر على Response.
-             */
+                // 2. طھظپط¹ظٹظ„ ط¯ط¹ظ… طھظˆط§ط±ظٹط® ط¬ط§ظپط§ 8 (LocalDate/LocalDateTime) ظ„طھط¬ظ†ط¨ ط£ط®ط·ط§ط، ط§ظ„طھط­ظˆظٹظ„
+                mapper.findAndRegisterModules();
 
-            return new ResponseEntity<>(
-                    session.get(),
-                    HttpStatus.OK
-            );
+                // 3. طھط­ظˆظٹظ„ ط§ظ„ظƒط§ط¦ظ† ط¥ظ„ظ‰ ظ†طµ JSON ظ…ط±طھط¨ ظˆظ…ظ‚ط±ظˆط،
+//                String jsonOutput = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(session.get());
+//
+                // 4. ط·ط¨ط§ط¹ط© ط§ظ„ظ†طھظٹط¬ط© ظپظٹ ط³ط·ط± ط§ظ„ط£ظˆط§ظ…ط± (Console)
+//                System.out.println("================= JSON RESPONSE =================");
+//                System.out.println(jsonOutput);
+//                System.out.println("=================================================");
+
+            } catch (Exception e) {
+                System.err.println("ط®ط·ط£ ط£ط«ظ†ط§ط، طھط­ظˆظٹظ„ ط§ظ„ظƒط§ط¦ظ† ط¥ظ„ظ‰ JSON: " + e.getMessage());
+            }
+
+            return new ResponseEntity<>(session.get(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
-        return new ResponseEntity<>(
-                HttpStatus.NOT_FOUND
-        );
     }
 
+
     // =========================================================
-    // تحديث جلسة
-    // PUT /api/sessions/{id}
+    // طھط­ط¯ظٹط« ط¬ظ„ط³ط©
     // =========================================================
 
     @PutMapping("/{id}")
-    @RequirePermission("SESSION_UPDATE")
     public ResponseEntity<?> updateSession(
             @PathVariable Long id,
-            @RequestBody Session session
-    ) {
+            @RequestBody Session session) {
 
         try {
 
@@ -121,20 +108,16 @@ public class SessionController {
                             session
                     );
 
-            return ResponseEntity.ok(
-                    updated
-            );
+            return ResponseEntity.ok(updated);
 
         } catch (RuntimeException e) {
 
             e.printStackTrace();
 
             return ResponseEntity
-                    .status(
-                            HttpStatus.INTERNAL_SERVER_ERROR
-                    )
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(
-                            "فشل تحديث الجلسة رقم "
+                            "ظپط´ظ„ طھط­ط¯ظٹط« ط§ظ„ط¬ظ„ط³ط© ط±ظ‚ظ… "
                                     + id
                                     + ": "
                                     + e.getMessage()
@@ -143,22 +126,16 @@ public class SessionController {
     }
 
     // =========================================================
-    // حذف جلسة
-    // DELETE /api/sessions/{id}
+    // ط­ط°ظپ ط¬ظ„ط³ط©
     // =========================================================
 
     @DeleteMapping("/{id}")
-    @RequirePermission("SESSION_DELETE")
-    public ResponseEntity<Void>
-    deleteSession(
-            @PathVariable Long id
-    ) {
+    public ResponseEntity<Void> deleteSession(
+            @PathVariable Long id) {
 
         try {
 
-            sessionService.deleteSession(
-                    id
-            );
+            sessionService.deleteSession(id);
 
             return new ResponseEntity<>(
                     HttpStatus.NO_CONTENT
