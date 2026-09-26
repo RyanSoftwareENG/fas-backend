@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class DeviceActivationCodeResponse {
 
     private Long activationCodeId;
-    private Long subscriptionId;
+
     private Long clinicId;
 
     private String activationCode;
@@ -13,35 +13,50 @@ public class DeviceActivationCodeResponse {
     private String status;
 
     private LocalDateTime createdAt;
+
     private LocalDateTime expiresAt;
+
+    // =====================================================
+    // Constructor
+    // =====================================================
 
     public DeviceActivationCodeResponse() {
     }
 
     public DeviceActivationCodeResponse(
             Long activationCodeId,
-            Long subscriptionId,
             Long clinicId,
             String activationCode,
             String status,
             LocalDateTime createdAt,
             LocalDateTime expiresAt
     ) {
-        this.activationCodeId = activationCodeId;
-        this.subscriptionId = subscriptionId;
-        this.clinicId = clinicId;
-        this.activationCode = activationCode;
-        this.status = status;
-        this.createdAt = createdAt;
-        this.expiresAt = expiresAt;
+
+        this.activationCodeId =
+                activationCodeId;
+
+        this.clinicId =
+                clinicId;
+
+        this.activationCode =
+                activationCode;
+
+        this.status =
+                status;
+
+        this.createdAt =
+                createdAt;
+
+        this.expiresAt =
+                expiresAt;
     }
+
+    // =====================================================
+    // Getters
+    // =====================================================
 
     public Long getActivationCodeId() {
         return activationCodeId;
-    }
-
-    public Long getSubscriptionId() {
-        return subscriptionId;
     }
 
     public Long getClinicId() {
@@ -63,5 +78,4 @@ public class DeviceActivationCodeResponse {
     public LocalDateTime getExpiresAt() {
         return expiresAt;
     }
-
 }

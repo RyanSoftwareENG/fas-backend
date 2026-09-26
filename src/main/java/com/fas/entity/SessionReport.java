@@ -1,5 +1,6 @@
 package com.fas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ public class SessionReport {
     @Column(name = "Report_ID") // 2. ربط اسم المفتاح الأساسي
     private Long reportId;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "Session_ID", // 3. تعديل اسم المفتاح الأجنبي

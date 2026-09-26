@@ -19,18 +19,20 @@ public class DeviceActivationCodeController {
         this.service = service;
     }
 
-    @PostMapping("/{subscriptionId}")
-    @RequirePermission(
-            "SUBSCRIPTION_MANAGE"
-    )
-    public ResponseEntity<DeviceActivationCodeResponse>
-    generate(
-            @PathVariable Long subscriptionId
+    // =====================================================
+    // إصدار كود تفعيل لجهاز تابع لعيادة
+    // POST /api/admin/device-activation/clinic/{clinicId}
+    // =====================================================
+
+    @PostMapping("/clinic/{clinicId}")
+    @RequirePermission("DEVICE_MANAGE")
+    public ResponseEntity<DeviceActivationCodeResponse> generate(
+            @PathVariable Long clinicId
     ) {
 
         return ResponseEntity.ok(
                 service.generate(
-                        subscriptionId
+                        clinicId
                 )
         );
     }

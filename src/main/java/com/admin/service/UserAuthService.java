@@ -12,7 +12,8 @@ import com.admin.repository.DeviceRepository;
 import com.admin.repository.FasUserRepository;
 import com.admin.repository.SubscriptionRepository;
 import com.admin.security.ActivationCodeHashUtil;
-
+import com.admin.repository.SubscriptionRepository;
+import com.admin.repository.ClinicRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,8 @@ public class UserAuthService {
     private final DeviceSetupTokenService
             deviceSetupTokenService;
 
+    private final ClinicRepository clinicRepository;
+
     private final BCryptPasswordEncoder passwordEncoder =
             new BCryptPasswordEncoder();
 
@@ -46,7 +49,8 @@ public class UserAuthService {
             SubscriptionRepository subscriptionRepository,
             DeviceActivationCodeRepository activationCodeRepository,
             UserSessionService userSessionService,
-            DeviceSetupTokenService deviceSetupTokenService
+            DeviceSetupTokenService deviceSetupTokenService,
+            ClinicRepository clinicRepository
     ) {
 
         this.userRepository =
@@ -66,6 +70,9 @@ public class UserAuthService {
 
         this.deviceSetupTokenService =
                 deviceSetupTokenService;
+
+        this.clinicRepository =
+                clinicRepository;
     }
 
     // =====================================================
@@ -838,21 +845,42 @@ public class UserAuthService {
             boolean needsSetup
     ) {
 
-        return new UserLoginResponse(
-                true,
-                message,
-                token,
-                user.getUserId(),
-                user.getClinicId(),
-                device != null
-                        ? device.getDeviceId()
-                        : null,
-                user.getUsername(),
-                user.getFullName(),
-                null,
-                firstLogin,
-                needsSetup
-        );
+        UserLoginResponse response =
+                new UserLoginResponse(
+                        true,
+                        message,
+                        token,
+                        user.getUserId(),
+                        user.getClinicId(),
+                        device != null
+                                ? device.getDeviceId()
+                                : null,
+                        user.getUsername(),
+                        user.getFullName(),
+                        null,
+                        firstLogin,
+                        needsSetup
+                );
+
+        // -----------------------------------------------------
+        // اسم العيادة
+        // -----------------------------------------------------
+
+        if (user.getClinicId() != null) {
+
+            clinicRepository
+                    .findById(
+                            user.getClinicId()
+                    )
+                    .ifPresent(
+                            clinic ->
+                                    response.setClinicName(
+                                            clinic.getClinicName()
+                                    )
+                    );
+        }
+
+        return response;
     }
 
     // =====================================================

@@ -2,10 +2,10 @@ package com.admin.service;
 
 import com.admin.entity.FasAdminRolePermission;
 import com.admin.entity.FasAdminUserRole;
-import com.admin.entity.FasAdminPermission;
 import com.admin.repository.FasAdminPermissionRepository;
 import com.admin.repository.FasAdminRolePermissionRepository;
 import com.admin.repository.FasAdminUserRoleRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -15,85 +15,212 @@ import java.util.Set;
 @Service
 public class AdminPermissionService {
 
+    // =====================================================
+    // Permission Codes
+    // =====================================================
+
+    public static final String DEVICE_MANAGE =
+            "DEVICE_MANAGE";
+
+    public static final String SUBSCRIPTION_MANAGE =
+            "SUBSCRIPTION_MANAGE";
+
+    public static final String CLINIC_MANAGE =
+            "CLINIC_MANAGE";
+
+    public static final String USER_MANAGE =
+            "USER_MANAGE";
+
+    // =====================================================
+    // Repositories
+    // =====================================================
+
     private final FasAdminUserRoleRepository userRoleRepository;
-    private final FasAdminRolePermissionRepository rolePermissionRepository;
-    private final FasAdminPermissionRepository permissionRepository;
+
+    private final FasAdminRolePermissionRepository
+            rolePermissionRepository;
+
+    private final FasAdminPermissionRepository
+            permissionRepository;
+
+    // =====================================================
+    // Constructor
+    // =====================================================
 
     public AdminPermissionService(
             FasAdminUserRoleRepository userRoleRepository,
             FasAdminRolePermissionRepository rolePermissionRepository,
             FasAdminPermissionRepository permissionRepository
     ) {
-        this.userRoleRepository = userRoleRepository;
-        this.rolePermissionRepository = rolePermissionRepository;
-        this.permissionRepository = permissionRepository;
+
+        this.userRoleRepository =
+                userRoleRepository;
+
+        this.rolePermissionRepository =
+                rolePermissionRepository;
+
+        this.permissionRepository =
+                permissionRepository;
     }
 
-    /**
-     * جلب جميع أكواد الصلاحيات الخاصة بمدير معين
-     */
-    public Set<String> getPermissionCodes(Long adminUserId) {
+    // =====================================================
+    // Get Permissions
+    // =====================================================
 
-        Set<String> permissionCodes = new HashSet<>();
+    /**
+     * جلب جميع أكواد الصلاحيات الفعالة
+     * الخاصة بمدير معين.
+     */
+    public Set<String> getPermissionCodes(
+            Long adminUserId
+    ) {
+
+        Set<String> permissionCodes =
+                new HashSet<>();
 
         if (adminUserId == null) {
             return permissionCodes;
         }
 
-        // 1. جلب أدوار المدير
+        // -------------------------------------------------
+        // 1. أدوار المدير
+        // -------------------------------------------------
+
         List<FasAdminUserRole> userRoles =
-                userRoleRepository.findByAdminUserId(adminUserId);
+                userRoleRepository
+                        .findByAdminUserId(
+                                adminUserId
+                        );
 
-        // 2. المرور على كل دور
-        for (FasAdminUserRole userRole : userRoles) {
+        // -------------------------------------------------
+        // 2. المرور على الأدوار
+        // -------------------------------------------------
 
-            Long roleId = userRole.getAdminRoleId();
+        for (
+                FasAdminUserRole userRole :
+                userRoles
+        ) {
 
-            // 3. جلب صلاحيات الدور
+            Long roleId =
+                    userRole.getAdminRoleId();
+
+            if (roleId == null) {
+                continue;
+            }
+
+            // -------------------------------------------------
+            // 3. صلاحيات الدور
+            // -------------------------------------------------
+
             List<FasAdminRolePermission> rolePermissions =
-                    rolePermissionRepository.findByAdminRoleId(roleId);
+                    rolePermissionRepository
+                            .findByAdminRoleId(
+                                    roleId
+                            );
 
-            // 4. جلب بيانات كل صلاحية
-            for (FasAdminRolePermission rolePermission
-                    : rolePermissions) {
+            // -------------------------------------------------
+            // 4. بيانات الصلاحيات
+            // -------------------------------------------------
+
+            for (
+                    FasAdminRolePermission rolePermission :
+                    rolePermissions
+            ) {
 
                 Long permissionId =
-                        rolePermission.getAdminPermissionId();
+                        rolePermission
+                                .getAdminPermissionId();
+
+                if (permissionId == null) {
+                    continue;
+                }
 
                 permissionRepository
-                        .findById(permissionId)
-                        .ifPresent(permission -> {
+                        .findById(
+                                permissionId
+                        )
+                        .ifPresent(
+                                permission -> {
 
-                            if ("ACTIVE".equalsIgnoreCase(
-                                    permission.getStatus())) {
+                                    if (
+                                            "ACTIVE".equalsIgnoreCase(
+                                                    permission.getStatus()
+                                            )
+                                    ) {
 
-                                permissionCodes.add(
-                                        permission.getPermissionCode()
-                                );
-                            }
-                        });
+                                        String code =
+                                                permission
+                                                        .getPermissionCode();
+
+                                        if (
+                                                code != null &&
+                                                        !code.isBlank()
+                                        ) {
+
+                                            permissionCodes.add(
+                                                    code.trim()
+                                                            .toUpperCase()
+                                            );
+                                        }
+                                    }
+                                }
+                        );
             }
         }
 
         return permissionCodes;
     }
 
+    // =====================================================
+    // Check Permission
+    // =====================================================
+
     /**
-     * التحقق من امتلاك المدير لصلاحية معينة
+     * التحقق من امتلاك المدير لصلاحية معينة.
      */
     public boolean hasPermission(
             Long adminUserId,
             String permissionCode
     ) {
 
-        if (adminUserId == null
-                || permissionCode == null
-                || permissionCode.isBlank()) {
+        if (
+                adminUserId == null ||
+                        permissionCode == null ||
+                        permissionCode.isBlank()
+        ) {
 
             return false;
         }
 
-        return getPermissionCodes(adminUserId)
-                .contains(permissionCode);
+        String normalizedCode =
+                permissionCode
+                        .trim()
+                        .toUpperCase();
+
+        return getPermissionCodes(
+                adminUserId
+        ).contains(
+                normalizedCode
+        );
+    }
+
+    // =====================================================
+    // Device Permission
+    // =====================================================
+
+    /**
+     * التحقق المباشر من صلاحية إدارة الأجهزة.
+     *
+     * لا يمنح الصلاحية من نفسه،
+     * بل يتحقق من وجودها ضمن صلاحيات المدير.
+     */
+    public boolean canManageDevices(
+            Long adminUserId
+    ) {
+
+        return hasPermission(
+                adminUserId,
+                DEVICE_MANAGE
+        );
     }
 }

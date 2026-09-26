@@ -1,10 +1,10 @@
 package com.admin.service;
 
 import com.admin.dto.DeviceActivationCodeResponse;
+import com.admin.entity.Clinic;
 import com.admin.entity.DeviceActivationCode;
-import com.admin.entity.Subscription;
+import com.admin.repository.ClinicRepository;
 import com.admin.repository.DeviceActivationCodeRepository;
-import com.admin.repository.SubscriptionRepository;
 import com.admin.security.ActivationCodeHashUtil;
 import com.admin.security.DeviceActivationCodeUtil;
 
@@ -16,77 +16,82 @@ import java.time.LocalDateTime;
 @Service
 public class DeviceActivationCodeService {
 
-    private final DeviceActivationCodeRepository
-            codeRepository;
+    private final DeviceActivationCodeRepository codeRepository;
 
-    private final SubscriptionRepository
-            subscriptionRepository;
+    private final ClinicRepository clinicRepository;
+
+    // =====================================================
+    // مدة صلاحية كود التفعيل
+    // =====================================================
+
+    private static final long ACTIVATION_CODE_VALIDITY_HOURS = 24;
+
+    // =====================================================
+    // Constructor
+    // =====================================================
 
     public DeviceActivationCodeService(
             DeviceActivationCodeRepository codeRepository,
-            SubscriptionRepository subscriptionRepository
+            ClinicRepository clinicRepository
     ) {
+
         this.codeRepository =
                 codeRepository;
 
-        this.subscriptionRepository =
-                subscriptionRepository;
+        this.clinicRepository =
+                clinicRepository;
     }
 
-// =========================================================
-// إصدار كود تفعيل لجهاز
-// =========================================================
+    // =========================================================
+    // إصدار كود تفعيل لجهاز تابع لعيادة
+    // =========================================================
 
     @Transactional
     public DeviceActivationCodeResponse generate(
-            Long subscriptionId
+            Long clinicId
     ) {
 
-        if (subscriptionId == null) {
+        // -----------------------------------------------------
+        // التحقق من Clinic ID
+        // -----------------------------------------------------
+
+        if (clinicId == null ||
+                clinicId <= 0) {
 
             throw new IllegalArgumentException(
-                    "معرف الاشتراك مطلوب"
+                    "معرف العيادة غير صالح."
             );
         }
 
-        Subscription subscription =
-                subscriptionRepository
-                        .findById(subscriptionId)
+        // -----------------------------------------------------
+        // البحث عن العيادة
+        // -----------------------------------------------------
+
+        Clinic clinic =
+                clinicRepository
+                        .findById(clinicId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "الاشتراك غير موجود"
+                                        "العيادة غير موجودة."
                                 )
                         );
 
         // -----------------------------------------------------
-        // التحقق من حالة الاشتراك
+        // يمكن هنا التحقق من حالة العيادة
+        // إذا كان كيان Clinic لديك يحتوي status
         // -----------------------------------------------------
+
+        /*
+        مثال:
 
         if (!"ACTIVE".equalsIgnoreCase(
-                subscription.getStatus()
+                clinic.getStatus()
         )) {
-
             throw new IllegalArgumentException(
-                    "لا يمكن إصدار كود لجهاز من اشتراك غير نشط"
+                    "العيادة غير نشطة."
             );
         }
-
-        // -----------------------------------------------------
-        // الحصول على العيادة من علاقة Subscription
-        // -----------------------------------------------------
-
-        if (subscription.getClinic() == null ||
-                subscription.getClinic().getClinicId() == null) {
-
-            throw new IllegalStateException(
-                    "الاشتراك لا يحتوي على عيادة مرتبطة"
-            );
-        }
-
-        Long clinicId =
-                subscription
-                        .getClinic()
-                        .getClinicId();
+        */
 
         // -----------------------------------------------------
         // إنشاء كود عشوائي فريد
@@ -115,17 +120,31 @@ public class DeviceActivationCodeService {
         );
 
         // -----------------------------------------------------
-        // إنشاء سجل كود التفعيل
+        // الوقت
         // -----------------------------------------------------
 
         LocalDateTime now =
                 LocalDateTime.now();
 
+        LocalDateTime expiresAt =
+                now.plusHours(
+                        ACTIVATION_CODE_VALIDITY_HOURS
+                );
+
+        // -----------------------------------------------------
+        // إنشاء سجل الكود
+        // -----------------------------------------------------
+
         DeviceActivationCode entity =
                 new DeviceActivationCode();
 
+        /*
+         * لا يوجد Subscription هنا.
+         *
+         * يبقى null.
+         */
         entity.setSubscriptionId(
-                subscriptionId
+                null
         );
 
         entity.setClinicId(
@@ -144,22 +163,13 @@ public class DeviceActivationCodeService {
                 now
         );
 
-        // -----------------------------------------------------
-        // انتهاء الكود مع انتهاء الاشتراك
-        // -----------------------------------------------------
+        entity.setExpiresAt(
+                expiresAt
+        );
 
-        if (subscription.getEndDate() != null) {
-
-            entity.setExpiresAt(
-                    subscription
-                            .getEndDate()
-                            .atTime(
-                                    23,
-                                    59,
-                                    59
-                            )
-            );
-        }
+        // -----------------------------------------------------
+        // الحفظ
+        // -----------------------------------------------------
 
         DeviceActivationCode saved =
                 codeRepository.save(
@@ -167,12 +177,11 @@ public class DeviceActivationCodeService {
                 );
 
         // -----------------------------------------------------
-        // إعادة الكود الحقيقي للـ Admin
+        // إعادة الكود الحقيقي إلى Admin
         // -----------------------------------------------------
 
         return new DeviceActivationCodeResponse(
                 saved.getActivationCodeId(),
-                saved.getSubscriptionId(),
                 saved.getClinicId(),
                 code,
                 saved.getStatus(),

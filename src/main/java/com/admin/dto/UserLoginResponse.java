@@ -14,7 +14,7 @@ public class UserLoginResponse {
      * Token مؤقت لتسجيل جهاز جديد.
      */
     private String setupToken;
-
+    private String clinicName;
     private Long userId;
     private Long clinicId;
     private Long deviceId;
@@ -198,5 +198,17 @@ public class UserLoginResponse {
 
     public void setNeedsSetup(boolean needsSetup) {
         this.needsSetup = needsSetup;
+    }
+
+    // =====================================================
+// Clinic Name
+// =====================================================
+
+    public String getClinicName() {
+        return clinicName;
+    }
+
+    public void setClinicName(String clinicName) {
+        this.clinicName = clinicName;
     }
 }
