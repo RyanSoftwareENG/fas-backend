@@ -4,8 +4,24 @@ services:
     container_name: fas-backend
     ports:
       - "8080:8080"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     environment:
+      # FAS database
       SPRING_DATASOURCE_URL: jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1
       SPRING_DATASOURCE_USERNAME: ${FAS_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${FAS_DB_PASSWORD}
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: oracle.jdbc.OracleDriver
+
+      # FAS Management database
+      SPRING_MANAGEMENT_DATASOURCE_URL: jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1
+      SPRING_MANAGEMENT_DATASOURCE_USERNAME: ${FAS_MANAGEMENT_USERNAME}
+      SPRING_MANAGEMENT_DATASOURCE_PASSWORD: ${FAS_MANAGEMENT_PASSWORD}
+      SPRING_MANAGEMENT_DATASOURCE_DRIVER_CLASS_NAME: oracle.jdbc.OracleDriver
+
+      # Oracle Provisioner
+      FAS_ORACLE_ADMIN_URL: jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1
+      FAS_ORACLE_ADMIN_USERNAME: ${FAS_PROVISIONER_USERNAME}
+      FAS_ORACLE_ADMIN_PASSWORD: ${FAS_PROVISIONER_PASSWORD}
