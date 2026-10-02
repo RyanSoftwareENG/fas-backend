@@ -23,10 +23,6 @@ public class AdminDashboardResponse {
     private long activePlans;
     private long disabledPlans;
 
-    private long totalFeatures;
-    private long activeFeatures;
-    private long disabledFeatures;
-
     private long totalSubscriptions;
     private long pendingSubscriptions;
     private long activeSubscriptions;
@@ -144,30 +140,6 @@ public class AdminDashboardResponse {
 
     public void setDisabledPlans(long disabledPlans) {
         this.disabledPlans = disabledPlans;
-    }
-
-    public long getTotalFeatures() {
-        return totalFeatures;
-    }
-
-    public void setTotalFeatures(long totalFeatures) {
-        this.totalFeatures = totalFeatures;
-    }
-
-    public long getActiveFeatures() {
-        return activeFeatures;
-    }
-
-    public void setActiveFeatures(long activeFeatures) {
-        this.activeFeatures = activeFeatures;
-    }
-
-    public long getDisabledFeatures() {
-        return disabledFeatures;
-    }
-
-    public void setDisabledFeatures(long disabledFeatures) {
-        this.disabledFeatures = disabledFeatures;
     }
 
     public long getTotalSubscriptions() {

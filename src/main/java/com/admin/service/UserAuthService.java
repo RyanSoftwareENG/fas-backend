@@ -283,34 +283,6 @@ public class UserAuthService {
         }
 
         // -------------------------------------------------
-        // الاشتراك
-        // -------------------------------------------------
-
-        Subscription subscription =
-                findActiveSubscription(
-                        user.getClinicId()
-                );
-
-        if (subscription == null) {
-
-            return failure(
-                    "لا يوجد اشتراك نشط لهذه العيادة."
-            );
-        }
-
-        String subscriptionError =
-                validateSubscriptionDates(
-                        subscription
-                );
-
-        if (subscriptionError != null) {
-
-            return failure(
-                    subscriptionError
-            );
-        }
-
-        // -------------------------------------------------
         // تحديث الجهاز
         // -------------------------------------------------
 
@@ -590,67 +562,8 @@ public class UserAuthService {
             );
         }
 
-        // -------------------------------------------------
-        // الاشتراك
-        // -------------------------------------------------
 
-        Subscription subscription =
-                subscriptionRepository
-                        .findById(
-                                activation.getSubscriptionId()
-                        )
-                        .orElse(null);
 
-        if (subscription == null) {
-
-            return failure(
-                    "الاشتراك المرتبط بكود التفعيل غير موجود."
-            );
-        }
-
-        String subscriptionError =
-                validateSubscriptionDates(
-                        subscription
-                );
-
-        if (subscriptionError != null) {
-
-            return failure(
-                    subscriptionError
-            );
-        }
-
-        // -------------------------------------------------
-        // التحقق من بيانات العيادة للكود
-        // -------------------------------------------------
-
-        if (activation.getClinicId() == null ||
-                subscription.getClinic() == null ||
-                subscription.getClinic().getClinicId() == null) {
-
-            return failure(
-                    "بيانات العيادة المرتبطة بكود التفعيل غير مكتملة."
-            );
-        }
-
-        Long subscriptionClinicId =
-                subscription
-                        .getClinic()
-                        .getClinicId();
-
-        // -------------------------------------------------
-        // الكود يجب أن يتبع الاشتراك نفسه
-        // -------------------------------------------------
-
-        if (!activation.getClinicId()
-                .equals(
-                        subscriptionClinicId
-                )) {
-
-            return failure(
-                    "كود التفعيل مرتبط بعيادة غير صالحة."
-            );
-        }
 
         // -------------------------------------------------
         // الكود يجب أن يتبع عيادة المستخدم
@@ -775,26 +688,6 @@ public class UserAuthService {
                 firstLogin,
                 false
         );
-    }
-
-    // =====================================================
-    // البحث عن الاشتراك النشط
-    // =====================================================
-
-    private Subscription findActiveSubscription(
-            Long clinicId
-    ) {
-
-        if (clinicId == null) {
-            return null;
-        }
-
-        return subscriptionRepository
-                .findFirstByClinic_ClinicIdAndStatusOrderByEndDateDesc(
-                        clinicId,
-                        "ACTIVE"
-                )
-                .orElse(null);
     }
 
     // =====================================================

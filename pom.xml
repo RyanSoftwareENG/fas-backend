@@ -22,7 +22,9 @@
     </properties>
 
     <dependencies>
+
         <!-- Spring Boot Starters -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -38,14 +40,18 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+
         <!-- Database Driver -->
+
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc11</artifactId>
             <scope>runtime</scope>
         </dependency>
 
+
         <!-- Boilerplate & Mapping Tools -->
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -63,12 +69,37 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <!-- Testing -->
+
+        <!-- ==================== TESTING ==================== -->
+
+        <!-- JUnit 5 + Mockito + AssertJ + MockMvc + Spring Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Spring Security Testing -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers + JUnit 5 -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Oracle Testcontainer -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-free</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -221,8 +221,8 @@ public class ClinicSchemaProvisioningService {
          *
          * FAS_PROVISIONER
          *
-         * يستخدم فقط لقراءة Metadata
-         * من FAS_ADMIN.
+         * يستخدم لقراءة Metadata
+         * وتنفيذ GRANTs.
          */
         try (
                 Connection metadataConnection =
@@ -414,6 +414,20 @@ public class ClinicSchemaProvisioningService {
                     "Sequences processed successfully."
             );
 
+            // -------------------------------------------------
+            // 10. الصلاحيات التلقائية لـ FAS_ADMIN
+            // -------------------------------------------------
+
+            grantFasAdminAccess(
+                    metadataConnection,
+                    schemaName,
+                    tables
+            );
+
+            System.out.println(
+                    "FAS_ADMIN privileges granted successfully."
+            );
+
             System.out.println(
                     "=========================================="
             );
@@ -427,6 +441,85 @@ public class ClinicSchemaProvisioningService {
             System.out.println(
                     "=========================================="
             );
+        }
+    }
+
+    // =========================================================
+    // إعطاء FAS_ADMIN صلاحيات على جميع Objects الخاصة بالعيادة
+    // =========================================================
+
+    private void grantFasAdminAccess(
+            Connection connection,
+            String schemaName,
+            List<String> tables
+    ) throws SQLException {
+
+        // -----------------------------------------------------
+        // 1. صلاحيات الجداول
+        // -----------------------------------------------------
+
+        for (String tableName : tables) {
+
+            String sql =
+                    "GRANT SELECT, INSERT, UPDATE, DELETE ON "
+                            + schemaName
+                            + "."
+                            + quote(tableName)
+                            + " TO FAS_ADMIN";
+
+            System.out.println(
+                    "Granting FAS_ADMIN access on table: "
+                            + schemaName
+                            + "."
+                            + tableName
+            );
+
+            try (
+                    Statement statement =
+                            connection.createStatement()
+            ) {
+
+                statement.executeUpdate(
+                        sql
+                );
+            }
+        }
+
+        // -----------------------------------------------------
+        // 2. صلاحية استخدام Sequences
+        // -----------------------------------------------------
+
+        List<String> sequences =
+                getCustomSequences(
+                        connection,
+                        TEMPLATE_SCHEMA
+                );
+
+        for (String sequenceName : sequences) {
+
+            String sql =
+                    "GRANT SELECT ON "
+                            + schemaName
+                            + "."
+                            + quote(sequenceName)
+                            + " TO FAS_ADMIN";
+
+            System.out.println(
+                    "Granting FAS_ADMIN access on sequence: "
+                            + schemaName
+                            + "."
+                            + sequenceName
+            );
+
+            try (
+                    Statement statement =
+                            connection.createStatement()
+            ) {
+
+                statement.executeUpdate(
+                        sql
+                );
+            }
         }
     }
 
@@ -863,6 +956,7 @@ public class ClinicSchemaProvisioningService {
                     if (isNotNullConstraint(
                             searchCondition
                     )) {
+
                         continue;
                     }
 
@@ -1329,6 +1423,7 @@ public class ClinicSchemaProvisioningService {
                         " DEFERRABLE INITIALLY IMMEDIATE"
                 );
             }
+
         } else {
 
             sql.append(

@@ -2,10 +2,9 @@ package com.fas.security;
 
 import com.admin.entity.Device;
 import com.admin.entity.FasUser;
-import com.admin.entity.Subscription;
 import com.admin.repository.DeviceRepository;
 import com.admin.repository.FasUserRepository;
-import com.admin.repository.SubscriptionRepository;
+import com.fas.config.ClinicContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Component
@@ -28,21 +26,15 @@ public class ClientAccessFilter
 
     private final DeviceRepository deviceRepository;
 
-    private final SubscriptionRepository subscriptionRepository;
-
     public ClientAccessFilter(
             FasUserRepository userRepository,
-            DeviceRepository deviceRepository,
-            SubscriptionRepository subscriptionRepository
+            DeviceRepository deviceRepository
     ) {
         this.userRepository =
                 userRepository;
 
         this.deviceRepository =
                 deviceRepository;
-
-        this.subscriptionRepository =
-                subscriptionRepository;
     }
 
     // =====================================================
@@ -70,7 +62,6 @@ public class ClientAccessFilter
 
         // =================================================
         // Login
-        // لا يحتاج Session
         // =================================================
 
         if (path.equals(
@@ -82,7 +73,6 @@ public class ClientAccessFilter
 
         // =================================================
         // Register Device
-        // يعتمد على Setup Token
         // =================================================
 
         if (path.equals(
@@ -94,8 +84,6 @@ public class ClientAccessFilter
 
         // =================================================
         // Logout
-        // يحتاج Session فقط
-        // ولا يحتاج فحص الاشتراك
         // =================================================
 
         if (path.equals(
@@ -106,7 +94,7 @@ public class ClientAccessFilter
         }
 
         // =================================================
-        // كل المسارات غير الخاصة بالعميل
+        // المسارات الخاصة بالعميل
         // =================================================
 
         return !(
@@ -155,7 +143,7 @@ public class ClientAccessFilter
                         ClientSessionFilter.USER_ID_ATTRIBUTE
                 );
 
-        if (!(userIdAttribute instanceof Number number)) {
+        if (!(userIdAttribute instanceof Number userNumber)) {
 
             sendUnauthorized(
                     response,
@@ -166,7 +154,7 @@ public class ClientAccessFilter
         }
 
         Long userId =
-                number.longValue();
+                userNumber.longValue();
 
         // =================================================
         // CLINIC_ID
@@ -177,7 +165,7 @@ public class ClientAccessFilter
                         ClientSessionFilter.CLINIC_ID_ATTRIBUTE
                 );
 
-        if (!(clinicIdAttribute instanceof Number )) {
+        if (!(clinicIdAttribute instanceof Number clinicNumber)) {
 
             sendUnauthorized(
                     response,
@@ -188,7 +176,7 @@ public class ClientAccessFilter
         }
 
         Long clinicId =
-                number.longValue();
+                clinicNumber.longValue();
 
         // =================================================
         // DEVICE_ID
@@ -199,7 +187,7 @@ public class ClientAccessFilter
                         ClientSessionFilter.DEVICE_ID_ATTRIBUTE
                 );
 
-        if (!(deviceIdAttribute instanceof Number )) {
+        if (!(deviceIdAttribute instanceof Number deviceNumber)) {
 
             sendUnauthorized(
                     response,
@@ -210,7 +198,7 @@ public class ClientAccessFilter
         }
 
         Long deviceId =
-                number.longValue();
+                deviceNumber.longValue();
 
         // =================================================
         // المستخدم
@@ -249,7 +237,7 @@ public class ClientAccessFilter
         }
 
         // =================================================
-        // عيادة المستخدم
+        // التحقق من عيادة المستخدم
         // =================================================
 
         if (user.getClinicId() == null ||
@@ -286,7 +274,7 @@ public class ClientAccessFilter
         }
 
         // =================================================
-        // عيادة الجهاز
+        // التحقق من عيادة الجهاز
         // =================================================
 
         if (device.getClinicId() == null ||
@@ -350,27 +338,18 @@ public class ClientAccessFilter
         }
 
         // =================================================
-        // طلب الاشتراك
-        //
-        // هذا المسار يسمح به حتى لو:
-        // - انتهى الاشتراك
-        // - لا يوجد اشتراك
-        //
-        // لأن الهدف منه طلب اشتراك جديد أو تجديد.
+        // تحديد العيادة الحالية
         // =================================================
 
-        String path =
-                request.getRequestURI();
+        ClinicContext.setClinicId(
+                clinicId
+        );
 
-        boolean subscriptionRequestPath =
-                path.equals(
-                        "/api/subscription-requests"
-                )
-                        || path.startsWith(
-                        "/api/subscription-requests/"
-                );
+        try {
 
-        if (subscriptionRequestPath) {
+            // =================================================
+            // تحديث آخر نشاط للجهاز
+            // =================================================
 
             device.setLastSeenAt(
                     LocalDateTime.now()
@@ -380,102 +359,25 @@ public class ClientAccessFilter
                     device
             );
 
+            // =================================================
+            // السماح بالطلب
+            //
+            // لا يوجد فحص Subscription هنا.
+            // =================================================
+
             filterChain.doFilter(
                     request,
                     response
             );
 
-            return;
+        } finally {
+
+            ClinicContext.clear();
         }
-
-        // =================================================
-        // باقي مسارات العميل
-        //
-        // تحتاج اشتراكًا صالحًا
-        // =================================================
-
-        Subscription subscription =
-                subscriptionRepository
-                        .findFirstByClinic_ClinicIdAndStatusOrderByEndDateDesc(
-                                clinicId,
-                                "ACTIVE"
-                        )
-                        .orElse(null);
-
-        if (subscription == null) {
-
-            sendAccessDenied(
-                    response,
-                    "SUBSCRIPTION_INACTIVE",
-                    "لا يوجد اشتراك نشط لهذه العيادة."
-            );
-
-            return;
-        }
-
-        // =================================================
-        // تاريخ بداية الاشتراك
-        // =================================================
-
-        LocalDate today =
-                LocalDate.now();
-
-        if (subscription.getStartDate() != null &&
-                today.isBefore(
-                        subscription.getStartDate()
-                )) {
-
-            sendAccessDenied(
-                    response,
-                    "SUBSCRIPTION_NOT_STARTED",
-                    "اشتراك العيادة لم يبدأ بعد."
-            );
-
-            return;
-        }
-
-        // =================================================
-        // تاريخ نهاية الاشتراك
-        // =================================================
-
-        if (subscription.getEndDate() != null &&
-                today.isAfter(
-                        subscription.getEndDate()
-                )) {
-
-            sendAccessDenied(
-                    response,
-                    "SUBSCRIPTION_EXPIRED",
-                    "انتهى اشتراك العيادة."
-            );
-
-            return;
-        }
-
-        // =================================================
-        // آخر نشاط
-        // =================================================
-
-        device.setLastSeenAt(
-                LocalDateTime.now()
-        );
-
-        deviceRepository.save(
-                device
-        );
-
-        // =================================================
-        // السماح
-        // =================================================
-
-        filterChain.doFilter(
-                request,
-                response
-        );
     }
 
     // =====================================================
-    // 401
+    // 401 Unauthorized
     // =====================================================
 
     private void sendUnauthorized(
@@ -492,7 +394,7 @@ public class ClientAccessFilter
     }
 
     // =====================================================
-    // 403
+    // 403 Forbidden
     // =====================================================
 
     private void sendAccessDenied(

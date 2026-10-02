@@ -121,33 +121,6 @@ public class AdminDashboardService {
         );
 
         // =====================================================
-        // Features
-        // =====================================================
-
-        response.setTotalFeatures(
-                count("""
-                        SELECT COUNT(*)
-                        FROM FAS_MANAGEMENT.FEATURE
-                        """)
-        );
-
-        response.setActiveFeatures(
-                count("""
-                        SELECT COUNT(*)
-                        FROM FAS_MANAGEMENT.FEATURE
-                        WHERE STATUS = 'ACTIVE'
-                        """)
-        );
-
-        response.setDisabledFeatures(
-                count("""
-                        SELECT COUNT(*)
-                        FROM FAS_MANAGEMENT.FEATURE
-                        WHERE STATUS = 'DISABLED'
-                        """)
-        );
-
-        // =====================================================
         // Subscriptions
         // =====================================================
 
